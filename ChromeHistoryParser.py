@@ -1,4 +1,4 @@
-import sqlite3, csv, argparse
+import sqlite3, csv, argparse, sys
 from chrome_constants import CORE_MASK, transition_types, transition_type_descriptions, QUALIFIER_MASK, transition_qualifiers, \
 transition_qualifier_descriptions, download_danger_types, download_danger_descriptions, download_interrupt_reason_types, \
 download_interrupt_reason_descriptions, download_state_types
@@ -9,7 +9,6 @@ from pytz import timezone, utc
 from tzlocal import get_localzone
 
 # TODO: check for os to check non-windows file paths (also chromium offshoots)
-# TODO: add initial help print from cli
 
 def chrome_history_to_csv(user=environ['USERNAME'], sourcedb=None, tempdb=None, outputdir=None, timezone='local'):
     if sourcedb is None:
@@ -104,15 +103,28 @@ def chrome_history_to_csv(user=environ['USERNAME'], sourcedb=None, tempdb=None, 
         writer.writerows(downloads)
         
 def main():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        add_help=False,
+        description=
+        '''Parse and extract url browsing history and download history from chrome's'''
+        '''user history sqlite db handling constant interpretation and tz conversion.''',
+        formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=40)
+    )
 
-    parser.add_argument('-u', '--user', type=str, metavar="STRING", default=environ['USERNAME'], help="The local username to parse chrom history for. (default: %USERNAME%)")
+    parser.add_argument('-u', '--user', type=str, metavar="STRING", default=environ['USERNAME'], help="The local username to parse chrom history for. (default: USERNAME)")
     parser.add_argument('-s', '--sourcedb', type=str, metavar="STRING", default=None, help="Explicit path to the HISTORY sqlite file for chrome.")
     parser.add_argument('-t', '--tempdb', type=str, metavar="STRING", default=None, help="Explicit path to copy the db to for processing to avoid handle conflicts.")
     parser.add_argument('-o', '--outputdir', type=str, metavar="STRING", default=None, help="Directory to write the output to.")
     parser.add_argument('-z', '--timezone', type=str, metavar="STRING", default="local", help="Timezone to convert to in format COUNTRY/REGION or UTC. (default: local)")
+    
+    if sys.argv[1] in ('-h','--help'):
+        parser.print_help()
+        sys.exit(0)
+
     args = parser.parse_args()
     chrome_history_to_csv(user=args.user,sourcedb=args.sourcedb,tempdb=args.tempdb,outputdir=args.outputdir,timezone=args.timezone)
+    sys.exit(0)
+
 
 if __name__ == "__main__":
     main()
