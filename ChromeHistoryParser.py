@@ -2,21 +2,38 @@ import sqlite3, csv, argparse, sys
 from chrome_constants import CORE_MASK, transition_types, transition_type_descriptions, QUALIFIER_MASK, transition_qualifiers, \
 transition_qualifier_descriptions, download_danger_types, download_danger_descriptions, download_interrupt_reason_types, \
 download_interrupt_reason_descriptions, download_state_types
-from os import environ, remove
+from os import environ, remove, path
 from shutil import copyfile
 from datetime import datetime, timedelta
 from pytz import timezone, utc
 from tzlocal import get_localzone
 
-# TODO: check for os to check non-windows file paths (also chromium offshoots)
-
-def chrome_history_to_csv(user=environ['USERNAME'], sourcedb=None, tempdb=None, outputdir=None, timezone='local'):
-    if sourcedb is None:
-        sourcedb = r"C:\users\{0}\AppData\Local\Google\Chrome\User Data\Default\HISTORY".format(user)
-    if tempdb is None:    
-        tempdb = r"c:\users\{0}\AppData\Local\Temp\HISTORY".format(user)
-    if outputdir is None:
-        outputdir = r"{0}\desktop".format(environ['USERPROFILE'])
+def chrome_history_to_csv(user=None, sourcedb=None, tempdb=None, outputdir=None, timezone='local'):
+    if "win32" in sys.platform:
+        if user is None:
+            user = environ['USERNAME']
+        if sourcedb is None:
+            # Win10/7/vista
+            sourcedb = r"C:\users\{0}\AppData\Local\Google\Chrome\User Data\Default\HISTORY".format(user)
+            # checking if xp, this is valid in theory not tested
+            if not path.exists(sourcedb):
+                sourcedb = r"C:\Documents and Settings\{0}\Local Settings\Application Data\Google\Chrome\User Data\Default\HISTORY".format(user)
+        if tempdb is None:    
+            tempdb = r"c:\users\{0}\AppData\Local\Temp\HISTORY".format(user)
+        if outputdir is None:
+            outputdir = r"{0}\desktop".format(environ['USERPROFILE'])
+    else:
+        # assumes a nix variant
+        if user is None:
+            user = environ['USER']
+        if sourcedb is None:
+            sourcedb = r"/home/{0}/.config/google-chrome/Default/History".format(user)
+            if not path.exists(sourcedb):
+                sourcedb = r"/home/{0}/.config/chromium/Default/History".format(user)
+        if tempdb is None:    
+            tempdb = r"/tmp/HISTORY"
+        if outputdir is None:
+            outputdir = r"/home/{0}/Desktop".format(user)
     url_history_csv = r"{0}\{1}chrome_history.csv".format(outputdir,user+"_")
     download_history_csv = r"{0}\{1}chrome_download_history.csv".format(outputdir,user+"_")
     # get the timezone
