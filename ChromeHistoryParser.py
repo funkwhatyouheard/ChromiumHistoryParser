@@ -134,7 +134,7 @@ def main():
     parser.add_argument('-o', '--outputdir', type=str, metavar="STRING", default=None, help="Directory to write the output to.")
     parser.add_argument('-z', '--timezone', type=str, metavar="STRING", default="local", help="Timezone to convert to in format COUNTRY/REGION or UTC. (default: local)")
     
-    if sys.argv[1] in ('-h','--help'):
+    if len(sys.argv) >= 2 and sys.argv[1] in ('-h','--help'):
         parser.print_help()
         sys.exit(0)
 
