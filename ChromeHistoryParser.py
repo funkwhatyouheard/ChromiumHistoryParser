@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 import sqlite3, csv, argparse, sys
 from chrome_constants import CORE_MASK, transition_types, transition_type_descriptions, QUALIFIER_MASK, transition_qualifiers, \
 transition_qualifier_descriptions, download_danger_types, download_danger_descriptions, download_interrupt_reason_types, \
