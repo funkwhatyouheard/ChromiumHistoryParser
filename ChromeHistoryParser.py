@@ -7,7 +7,8 @@ download_interrupt_reason_descriptions, download_state_types
 from os import environ, remove, path
 from shutil import copyfile
 from datetime import datetime, timedelta
-from pytz import timezone, utc
+from pytz import timezone as get_timezone
+from pytz import utc
 from tzlocal import get_localzone
 
 def chrome_history_to_csv(user=None, sourcedb=None, tempdb=None, outputdir=None, timezone='local'):
@@ -42,7 +43,7 @@ def chrome_history_to_csv(user=None, sourcedb=None, tempdb=None, outputdir=None,
     if timezone == 'local':
         tz = get_localzone()
     else:
-        tz = timezone(timezone)
+        tz = get_timezone(timezone)
     # making a copy, sometimes fails when chrome has a handle on the file
     copyfile(sourcedb,tempdb)
     url_columns = ["url","title","visit_count","typed_count","last_visit_time","hidden"]#,"visit_time","from_visit","transition"]
