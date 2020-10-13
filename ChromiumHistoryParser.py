@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 import sqlite3, csv, argparse, sys
-from chrome_constants import CORE_MASK, transition_types, transition_type_descriptions, QUALIFIER_MASK, transition_qualifiers, \
+from chromium_constants import CORE_MASK, transition_types, transition_type_descriptions, QUALIFIER_MASK, transition_qualifiers, \
 transition_qualifier_descriptions, download_danger_types, download_danger_descriptions, download_interrupt_reason_types, \
 download_interrupt_reason_descriptions, download_state_types
 from os import environ, remove, path
@@ -11,7 +11,12 @@ from pytz import timezone as get_timezone
 from pytz import utc
 from tzlocal import get_localzone
 
-def chrome_history_to_csv(user=None,curruser=False, sourcedb=None, tempdb=None, outputdir=None, timezone='local'):
+def chromium_history_to_csv(user=None,curruser=False, sourcedb=None, tempdb=None, outputdir=None, timezone='local'):
+    """
+    Parses the specified chromium History db to extract download and url history information.
+    Defaults to look for chrome's history, but can override with 'sourcedb' param to specify the
+    History file for any chromium base browser such as edge, brave, vivaldi, and more
+    """
     if user is None and curruser is False and sourcedb is None:
         raise ValueError("Must specify a sourcedb path, explicit user, or curruser flag")
     if "win32" in sys.platform:
@@ -39,14 +44,14 @@ def chrome_history_to_csv(user=None,curruser=False, sourcedb=None, tempdb=None, 
             tempdb = r"/tmp/HISTORY"
         if outputdir is None:
             outputdir = r"/home/{0}/Desktop".format(environ['USER'])
-    url_history_csv = r"{0}\{1}chrome_history.csv".format(outputdir,user+"_" if user is not None else '')
-    download_history_csv = r"{0}\{1}chrome_download_history.csv".format(outputdir,user+"_" if user is not None else '')
+    url_history_csv = r"{0}\{1}chromium_history.csv".format(outputdir,user+"_" if user is not None else '')
+    download_history_csv = r"{0}\{1}chromium_download_history.csv".format(outputdir,user+"_" if user is not None else '')
     # get the timezone
     if timezone == 'local':
         tz = get_localzone()
     else:
         tz = get_timezone(timezone)
-    # making a copy, sometimes fails when chrome has a handle on the file
+    # making a copy, sometimes fails when browser has a handle on the file
     copyfile(sourcedb,tempdb)
     url_columns = ["url","title","visit_count","typed_count","last_visit_time","hidden"]#,"visit_time","from_visit","transition"]
     url_derived_columns = ["transition_core","transition_qualifiers","transition_description","qualifiers_description"]
@@ -76,7 +81,7 @@ def chrome_history_to_csv(user=None,curruser=False, sourcedb=None, tempdb=None, 
         entry = dict()
         for i in range(len(url_visits_columns)):
             if "time" in url_visits_columns[i] and len(str(result[i])) == 17:
-                # this is the time that chrome starts counting from
+                # this is the time that chromium starts counting from
                 converted_time = (datetime(1601,1,1) + timedelta(microseconds=result[i]))
                 entry[url_visits_columns[i]] = utc.localize(converted_time,is_dst=None).astimezone(tz).isoformat()
             elif "transition" in url_visits_columns[i]:
@@ -128,14 +133,14 @@ def main():
     parser = argparse.ArgumentParser(
         add_help=False,
         description=
-        '''Parse and extract url browsing history and download history from chrome's'''
+        '''Parse and extract url browsing history and download history from any chromium-based browser's'''
         '''user history sqlite db handling constant interpretation and tz conversion.''',
         formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=40)
     )
 
-    parser.add_argument('-u', '--user', type=str, metavar="STRING", default=None, help="The local username to parse chrome history for. (default: USERNAME)")
-    parser.add_argument('-c', '--curruser', action='store_true', help="Will pull the currently logged in user's chrome history if specified.")
-    parser.add_argument('-s', '--sourcedb', type=str, metavar="STRING", default=None, help="Explicit path to the HISTORY sqlite file for chrome.")
+    parser.add_argument('-u', '--user', type=str, metavar="STRING", default=None, help="The local username to parse chromium browser history for. (default: USERNAME)")
+    parser.add_argument('-c', '--curruser', action='store_true', help="Will pull the currently logged in user's chromium history if specified.")
+    parser.add_argument('-s', '--sourcedb', type=str, metavar="STRING", default=None, help="Explicit path to the HISTORY sqlite file for chromium-based browser.")
     parser.add_argument('-t', '--tempdb', type=str, metavar="STRING", default=None, help="Explicit path to copy the db to for processing to avoid handle conflicts.")
     parser.add_argument('-o', '--outputdir', type=str, metavar="STRING", default=None, help="Directory to write the output to.")
     parser.add_argument('-z', '--timezone', type=str, metavar="STRING", default="local", help="Timezone to convert to in format COUNTRY/REGION or UTC. (default: local)")
@@ -145,7 +150,7 @@ def main():
         sys.exit(0)
 
     args = parser.parse_args()
-    chrome_history_to_csv(user=args.user,curruser=args.curruser,sourcedb=args.sourcedb,tempdb=args.tempdb,outputdir=args.outputdir,timezone=args.timezone)
+    chromium_history_to_csv(user=args.user,curruser=args.curruser,sourcedb=args.sourcedb,tempdb=args.tempdb,outputdir=args.outputdir,timezone=args.timezone)
     sys.exit(0)
 
 
