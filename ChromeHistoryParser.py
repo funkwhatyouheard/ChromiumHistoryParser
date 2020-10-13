@@ -11,9 +11,11 @@ from pytz import timezone as get_timezone
 from pytz import utc
 from tzlocal import get_localzone
 
-def chrome_history_to_csv(user=None, sourcedb=None, tempdb=None, outputdir=None, timezone='local'):
+def chrome_history_to_csv(user=None,curruser=False, sourcedb=None, tempdb=None, outputdir=None, timezone='local'):
+    if user is None and curruser is False and sourcedb is None:
+        raise ValueError("Must specify a sourcedb path, explicit user, or curruser flag")
     if "win32" in sys.platform:
-        if user is None:
+        if curruser:
             user = environ['USERNAME']
         if sourcedb is None:
             # Win10/7/vista
@@ -22,12 +24,12 @@ def chrome_history_to_csv(user=None, sourcedb=None, tempdb=None, outputdir=None,
             if not path.exists(sourcedb):
                 sourcedb = r"C:\Documents and Settings\{0}\Local Settings\Application Data\Google\Chrome\User Data\Default\HISTORY".format(user)
         if tempdb is None:    
-            tempdb = r"c:\users\{0}\AppData\Local\Temp\HISTORY".format(user)
+            tempdb = r"c:\users\{0}\AppData\Local\Temp\HISTORY".format(environ['USERNAME'])
         if outputdir is None:
             outputdir = r"{0}\desktop".format(environ['USERPROFILE'])
     else:
         # assumes a nix variant
-        if user is None:
+        if curruser:
             user = environ['USER']
         if sourcedb is None:
             sourcedb = r"/home/{0}/.config/google-chrome/Default/History".format(user)
@@ -36,9 +38,9 @@ def chrome_history_to_csv(user=None, sourcedb=None, tempdb=None, outputdir=None,
         if tempdb is None:    
             tempdb = r"/tmp/HISTORY"
         if outputdir is None:
-            outputdir = r"/home/{0}/Desktop".format(user)
-    url_history_csv = r"{0}\{1}chrome_history.csv".format(outputdir,user+"_")
-    download_history_csv = r"{0}\{1}chrome_download_history.csv".format(outputdir,user+"_")
+            outputdir = r"/home/{0}/Desktop".format(environ['USER'])
+    url_history_csv = r"{0}\{1}chrome_history.csv".format(outputdir,user+"_" if user is not None else '')
+    download_history_csv = r"{0}\{1}chrome_download_history.csv".format(outputdir,user+"_" if user is not None else '')
     # get the timezone
     if timezone == 'local':
         tz = get_localzone()
@@ -131,18 +133,19 @@ def main():
         formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=40)
     )
 
-    parser.add_argument('-u', '--user', type=str, metavar="STRING", default=environ['USERNAME'], help="The local username to parse chrom history for. (default: USERNAME)")
+    parser.add_argument('-u', '--user', type=str, metavar="STRING", default=None, help="The local username to parse chrome history for. (default: USERNAME)")
+    parser.add_argument('-c', '--curruser', action='store_true', help="Will pull the currently logged in user's chrome history if specified.")
     parser.add_argument('-s', '--sourcedb', type=str, metavar="STRING", default=None, help="Explicit path to the HISTORY sqlite file for chrome.")
     parser.add_argument('-t', '--tempdb', type=str, metavar="STRING", default=None, help="Explicit path to copy the db to for processing to avoid handle conflicts.")
     parser.add_argument('-o', '--outputdir', type=str, metavar="STRING", default=None, help="Directory to write the output to.")
     parser.add_argument('-z', '--timezone', type=str, metavar="STRING", default="local", help="Timezone to convert to in format COUNTRY/REGION or UTC. (default: local)")
     
-    if len(sys.argv) >= 2 and sys.argv[1] in ('-h','--help'):
+    if len(sys.argv) < 2 or sys.argv[1] in ('-h','--help'):
         parser.print_help()
         sys.exit(0)
 
     args = parser.parse_args()
-    chrome_history_to_csv(user=args.user,sourcedb=args.sourcedb,tempdb=args.tempdb,outputdir=args.outputdir,timezone=args.timezone)
+    chrome_history_to_csv(user=args.user,curruser=args.curruser,sourcedb=args.sourcedb,tempdb=args.tempdb,outputdir=args.outputdir,timezone=args.timezone)
     sys.exit(0)
 
 
